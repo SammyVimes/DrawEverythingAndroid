@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">DrawEverything</string>
+    <string name="title_activity_lessons">Lessons</string>
+    <string name="crash_toast_text">Babah</string>
+    <string name="sv_search">Search</string>
+</resources>

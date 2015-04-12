@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:paddingLeft="4dp"
+              android:paddingRight="4dp"
+              android:paddingTop="2dp"
+              android:paddingBottom="2dp">
+
+    <RelativeLayout android:layout_width="fill_parent"
+                  android:layout_height="@dimen/grid_item_height"
+                  android:background="@drawable/grid_item_background"
+                  android:id="@+id/card_wrapper">
+
+
+        <ImageView android:layout_width="fill_parent"
+                   android:layout_height="fill_parent"
+                   android:id="@+id/cover"
+                   android:layout_above="@+id/title"
+                   android:scaleType="centerCrop"/>
+
+        <TextView android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:id="@+id/title"
+                  android:padding="10dp"
+                  android:layout_alignParentBottom="true"
+                  android:textSize="@dimen/grid_item_text_size"
+                  android:text="Bakuman"
+                  android:singleLine="true"
+                  android:textColor="@android:color/black"/>
+
+    </RelativeLayout>
+
+    <ImageView
+            android:id="@+id/bottom"
+            android:layout_below="@+id/card_wrapper"
+            android:src="@drawable/card_shadow"
+            android:layout_height="@dimen/card_shadow"
+            android:layout_width="fill_parent"/>
+
+    <View android:layout_width="fill_parent"
+          android:layout_height="@dimen/grid_item_height"
+          android:background="@drawable/selectable_item_background"/>
+
+</RelativeLayout>

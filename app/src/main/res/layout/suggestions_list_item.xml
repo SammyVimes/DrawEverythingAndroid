@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout android:layout_height="fill_parent"
+                android:layout_width="fill_parent"
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:descendantFocusability="blocksDescendants"
+                android:orientation="horizontal"
+                android:background="@drawable/selectable_item_background">
+
+    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/text1"
+              android:textColor="#000"
+              android:padding="15sp"
+              android:textSize="17sp"
+              android:layout_height="fill_parent"
+              android:layout_width="wrap_content"
+              android:layout_alignParentLeft="true"
+              android:layout_toLeftOf="@+id/suggestion_merge"
+              android:singleLine="true"
+              android:layout_centerVertical="true"/>
+
+    <ImageButton android:layout_width="wrap_content"
+                 android:layout_height="fill_parent"
+                 android:id="@+id/suggestion_merge"
+                 android:layout_centerVertical="true"
+                 android:layout_alignParentRight="true"
+                 android:src="@drawable/ic_action_merge"
+                 android:focusable="false"
+                 android:background="@drawable/selectable_item_background"
+                 android:focusableInTouchMode="false"/>
+
+</RelativeLayout>
