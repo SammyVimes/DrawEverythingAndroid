@@ -3,4 +3,7 @@
     <string name="title_activity_lessons">Lessons</string>
     <string name="crash_toast_text">Babah</string>
     <string name="sv_search">Search</string>
+    <string name="steps">Steps</string>
+    <string name="step">Step</string>
+    <string name="result">Result</string>
 </resources>

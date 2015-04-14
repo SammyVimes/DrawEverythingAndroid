@@ -25,6 +25,7 @@ import ru.edikandco.draweverything.core.util.Utils;
  */
 public class API {
 
+    private static final String SEARCH_URI = "http://howtodraw.azurewebsites.net/HowToDraw/API/search/${PAGE}?q=";
     private static final String BASE_NEW_LESSONS_URI = "http://howtodraw.azurewebsites.net/HowToDraw/API/lessons/${PAGE}?sort=NEW";
     private static final String SUGGESTIONS_URI = "http://howtodraw.azurewebsites.net/HowToDraw/API/hints/?q=";
     private static final String BASE_LESSONS_COVER_URI = "http://howtodraw.azurewebsites.net/HowToDraw/API/lesson_prev/";
@@ -53,6 +54,40 @@ public class API {
         return lessons;
     }
 
+    public List<Lesson> search(final String query, final int page) throws Exception {
+        List<Lesson> lessons = null;
+
+        HttpBytesReader httpBytesReader = ServiceContainer.getService(HttpBytesReader.class);
+        if (httpBytesReader != null) {
+            Exception ex = null;
+            try {
+                String uri = SEARCH_URI + URLEncoder.encode(query, Charset.forName(HTTP.UTF_8).name());
+                uri = uri.replace("${PAGE}", "" + page);
+                byte[] response = httpBytesReader.fromUri(uri);
+                String responseString = IoUtils.convertBytesToString(response);
+                lessons = parseNewLessonsResponse(Utils.toJSON(responseString));
+            } catch (HttpRequestException e) {
+                ex = e;
+            } catch (JSONException e) {
+                ex = e;
+            } catch (UnsupportedEncodingException e) {
+                ex = e;
+            }
+            if (ex != null) {
+                throw new Exception(ex.getMessage());
+            }
+        }
+        return lessons;
+    }
+
+    public List<String> getLessonPaths(final Lesson lesson) {
+        List<String> paths = new ArrayList<>(lesson.getSteps());
+        for (int i = 0; i < lesson.getSteps(); i++) {
+            paths.add("http://howtodraw.azurewebsites.net/HowToDraw/API/lesson/" + lesson.getId() + "?step=" + i);
+        }
+        return paths;
+    }
+
     public List<LessonSuggestion> getSuggestions(final String query) throws Exception {
         List<LessonSuggestion> suggestions = null;
 
@@ -60,7 +95,7 @@ public class API {
         if (httpBytesReader != null) {
             Exception ex = null;
             try {
-                String uri = SUGGESTIONS_URI + URLEncoder.encode(query, Charset.forName(HTTP.UTF_8).name());;
+                String uri = SUGGESTIONS_URI + URLEncoder.encode(query, Charset.forName(HTTP.UTF_8).name());
                 byte[] response = httpBytesReader.fromUri(uri);
                 String responseString = IoUtils.convertBytesToString(response);
                 suggestions = parseSuggestionsResponse(Utils.toJSON(responseString));
@@ -69,7 +104,7 @@ public class API {
             } catch (JSONException e) {
                 ex = e;
             } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                ex = e;
             }
             if (ex != null) {
                 throw new Exception(ex.getMessage());
@@ -92,6 +127,7 @@ public class API {
             int complexity = jsonLesson.getInt("complexity");
             int views = jsonLesson.getInt("views");
             int rating = jsonLesson.getInt("rating");
+            int steps = jsonLesson.getInt("steps");
 
             lesson.setTitle(title);
             lesson.setCoverURI(coverURI);
@@ -99,6 +135,7 @@ public class API {
             lesson.setId(id);
             lesson.setViews(views);
             lesson.setRating(rating);
+            lesson.setSteps(steps);
             lesson.setCoverURI(coverURI);
             lessons.add(lesson);
         }

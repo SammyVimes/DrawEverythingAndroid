@@ -1,8 +1,11 @@
 package ru.edikandco.draweverything.activity;
 
+import android.app.DownloadManager;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Bitmap;
@@ -14,18 +17,22 @@ import android.support.v4.widget.CursorAdapter;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.DownloadListener;
+import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,11 +42,12 @@ import ru.edikandco.draweverything.core.adapter.BaseAdapter;
 import ru.edikandco.draweverything.core.model.Lesson;
 import ru.edikandco.draweverything.core.model.LessonSuggestion;
 import ru.edikandco.draweverything.core.service.API;
+import ru.edikandco.draweverything.core.util.Constants;
 import ru.edikandco.draweverything.core.util.Promise;
 import ru.edikandco.draweverything.core.util.ServiceContainer;
 import ru.edikandco.draweverything.core.util.Utils;
 
-public class LessonsActivity extends BaseToolbarActivity {
+public class LessonsActivity extends BaseToolbarActivity implements AdapterView.OnItemClickListener {
 
     public static final String CURSOR_ID = BaseColumns._ID;
     public static final String CURSOR_NAME = SearchManager.SUGGEST_COLUMN_TEXT_1;
@@ -98,7 +106,7 @@ public class LessonsActivity extends BaseToolbarActivity {
                 return null;
             }
         });
-
+        gridView.setOnItemClickListener(this);
 
     }
 
@@ -128,6 +136,67 @@ public class LessonsActivity extends BaseToolbarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemClick(final AdapterView<?> adapterView, final View view, final int i, final long l) {
+        final API api = ServiceContainer.getService(API.class);
+        final Lesson lesson = (Lesson) adapterView.getAdapter().getItem(i);
+        Promise.run(new Promise.PromiseRunnable<List<String>>() {
+            @Override
+            public void run(final Promise<List<String>>.Resolver resolver) {
+                resolver.resolve(api.getLessonPaths(lesson));
+            }
+        }, true).then(new Promise.Action<List<String>, Void>() {
+            @Override
+            public Void action(final List<String> data, final boolean success) {
+                int i = 0;
+                File file = new File(Constants.SDPATH + "/" + lesson.getId() + "/");
+                file.mkdirs();
+
+                DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+
+                for (String path : data) {
+                    DownloadManager.Request request = new DownloadManager.Request(
+                            Uri.parse(path));
+                    File f = new File(Constants.SDPATH + "/" + lesson.getId() + "/" + i + ".png");
+                    request.setDestinationUri(Uri.fromFile(f));
+                    downloadManager.enqueue(request);
+                    i++;
+                }
+
+                final BroadcastReceiver receiver = new BroadcastReceiver() {
+
+                    private int size = data.size();
+                    private int cur = 0;
+
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String action = intent.getAction();
+                        final BroadcastReceiver _this = this;
+                        if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    cur++;
+                                    if (cur >= size) {
+                                        Intent intent = new Intent(LessonsActivity.this, LessonActivity.class);
+                                        intent.putExtra("lesson_id", lesson.getId());
+                                        unregisterReceiver(_this);
+                                        startActivity(intent);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                };
+
+                registerReceiver(receiver, new IntentFilter(
+                        DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+
+                return null;
+            }
+        });
     }
 
     private class LessonsAdapter extends BaseAdapter<Holder, Lesson> {
@@ -252,7 +321,11 @@ public class LessonsActivity extends BaseToolbarActivity {
                 return null;
             }
             API api = ServiceContainer.getService(API.class);
-//            return api.search(params[0]);
+            try {
+                return api.search(params[0], 0);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return null;
         }
 

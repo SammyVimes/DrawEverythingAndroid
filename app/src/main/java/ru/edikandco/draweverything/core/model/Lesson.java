@@ -16,6 +16,7 @@ public class Lesson {
     private int views;
 
     private int id;
+    private int steps;
 
     public String getCoverURI() {
         return coverURI;
@@ -63,5 +64,13 @@ public class Lesson {
 
     public void setId(final int id) {
         this.id = id;
+    }
+
+    public void setSteps(final int steps) {
+        this.steps = steps;
+    }
+
+    public int getSteps() {
+        return steps;
     }
 }
