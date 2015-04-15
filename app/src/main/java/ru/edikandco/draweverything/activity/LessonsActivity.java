@@ -68,7 +68,7 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
         httpImageManager = ServiceContainer.getService(HttpImageManager.class);
         gridView = findViewWithId(R.id.grid_view);
         progressBar = findViewWithId(R.id.progressBar);
-
+        showProgressBar();
         Promise<List<Lesson>> promise = Promise.run(new Promise.PromiseRunnable<List<Lesson>>() {
             @Override
             public void run(final Promise<List<Lesson>>.Resolver resolver) {
@@ -88,6 +88,7 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        hideProgressBar();
                         showSearchResult(data);
                     }
                 });
