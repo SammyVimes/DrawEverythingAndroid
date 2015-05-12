@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.BaseColumns;
@@ -17,6 +18,7 @@ import android.support.v4.widget.CursorAdapter;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -40,6 +42,7 @@ import java.util.List;
 import httpimage.HttpImageManager;
 import ru.edikandco.draweverything.R;
 import ru.edikandco.draweverything.core.adapter.BaseAdapter;
+import ru.edikandco.draweverything.core.http.AsyncDrawable;
 import ru.edikandco.draweverything.core.model.Lesson;
 import ru.edikandco.draweverything.core.model.LessonSuggestion;
 import ru.edikandco.draweverything.core.service.API;
@@ -338,7 +341,37 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
         protected Holder(final View view) {
             super(view);
             title = findViewById(R.id.title);
-            cover = findViewById(R.id.cover);
+            cover = new MImageView(view.getContext(), (ImageView) findViewById(R.id.cover), (ProgressBar) findViewById(R.id.progress_bar));
+        }
+
+        private class MImageView extends ImageView {
+
+            private ImageView imageView;
+            private ProgressBar progressBar;
+
+            public MImageView(final Context context, final ImageView imageView, final ProgressBar progressBar) {
+                super(context);
+                this.imageView = imageView;
+                this.progressBar = progressBar;
+            }
+
+            @Override
+            public void setImageDrawable(final Drawable drawable) {
+                if (drawable instanceof AsyncDrawable) {
+                    progressBar.setVisibility(View.VISIBLE);
+                    imageView.setVisibility(View.INVISIBLE);
+                    super.setImageDrawable(drawable);
+                } else {
+                    imageView.setImageDrawable(drawable);
+                }
+            }
+
+            @Override
+            public void setImageBitmap(final Bitmap bm) {
+                progressBar.setVisibility(View.INVISIBLE);
+                imageView.setVisibility(View.VISIBLE);
+                imageView.setImageBitmap(bm);
+            }
         }
 
     }
