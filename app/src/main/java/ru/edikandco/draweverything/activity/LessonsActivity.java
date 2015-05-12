@@ -25,8 +25,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.DownloadListener;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageButton;
@@ -65,7 +68,7 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
     private GridView gridView = null;
     private SearchView searchView;
 
-    private ProgressBar progressBar;
+    private View progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,13 +77,41 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
         httpImageManager = ServiceContainer.getService(HttpImageManager.class);
         gridView = findViewWithId(R.id.grid_view);
         progressBar = findViewWithId(R.id.progressBar);
+        loadNew(0);
+        gridView.setOnItemClickListener(this);
+        gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem,
+                                 int visibleItemCount, int totalItemCount) {
+                //what is the bottom item that is visible
+                int lastInScreen = firstVisibleItem + visibleItemCount;
+                //is the bottom item visible & not loading more already ? Load more !
+                if ((lastInScreen == totalItemCount) && !(loadingMore) && needToLoad) {
+                    loadNew(curPage + 1);
+                }
+            }
+        });
+    }
+
+    private boolean loadingMore = false;
+    private boolean needToLoad = true;
+    private int curPage = 0;
+
+    private void loadNew(final int page) {
         showProgressBar();
+        loadingMore = true;
+        curPage = page;
         Promise<List<Lesson>> promise = Promise.run(new Promise.PromiseRunnable<List<Lesson>>() {
             @Override
             public void run(final Promise<List<Lesson>>.Resolver resolver) {
                 API api = ServiceContainer.getService(API.class);
                 try {
-                    List<Lesson> lessons = api.getLessons(0);
+                    List<Lesson> lessons = api.getLessons(curPage);
                     resolver.resolve(lessons);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -94,8 +125,13 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        if (!data.isEmpty()) {
+                            appendResult(data);
+                        } else {
+                            needToLoad = false;
+                        }
+                        loadingMore = false;
                         hideProgressBar();
-                        showSearchResult(data);
                     }
                 });
                 return null;
@@ -107,17 +143,40 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        loadingMore = false;
+                        needToLoad = false;
+                        //TODO: imma wiseman, если произошла ошибка больше не грузим
                         Utils.showToast(getApplicationContext(), "Error: " + data.getMessage());
                     }
                 });
                 return null;
             }
         });
-        gridView.setOnItemClickListener(this);
+    }
 
+    private List<Lesson> results = new ArrayList<>();
+
+    private void appendResult(final List<Lesson> res) {
+        // save index and top position
+        int index = gridView.getFirstVisiblePosition();
+        View v = gridView.getChildAt(0);
+        int top = (v == null) ? 0 : v.getTop();
+
+        results.addAll(res);
+        LessonsAdapter adapter = (LessonsAdapter) gridView.getAdapter();
+        if (adapter == null) {
+            adapter = new LessonsAdapter(getApplicationContext(), 0, results);
+            gridView.setAdapter(adapter);
+        }
+        // notify dataset changed or re-assign adapter here
+        adapter.notifyDataSetChanged();
+
+        // restore the position of listview
+//        gridView.setSelectionFromTop(index, top);
     }
 
     private void showSearchResult(final List<Lesson> results) {
+        gridView.setOnScrollListener(null);
         gridView.setAdapter(new LessonsAdapter(getApplicationContext(), 0, results));
     }
 
@@ -268,7 +327,7 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
     private void setupSearchView(final Menu menu) {
         searchView = (SearchView) MenuItemCompat.getActionView(menu.findItem(R.id.search));
         searchView.setSubmitButtonEnabled(true);
-        searchView.setIconifiedByDefault(false);
+        searchView.setIconifiedByDefault(true);
         searchView.setFocusable(false);
         searchView.clearFocus();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -493,12 +552,47 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
 
     }
 
+    private Animation prevAnimation = null;
+
     public void showProgressBar() {
+        if (prevAnimation != null) {
+            prevAnimation.cancel();
+        }
         progressBar.setVisibility(View.VISIBLE);
+        AlphaAnimation alphaAnimation = new AlphaAnimation(0.f, 1.f);
+        alphaAnimation.setFillAfter(true);
+        alphaAnimation.setDuration(1500);
+        progressBar.setAnimation(alphaAnimation);
+        alphaAnimation.start();
+        prevAnimation = alphaAnimation;
     }
 
     public void hideProgressBar() {
-        progressBar.setVisibility(View.INVISIBLE);
+        if (prevAnimation != null) {
+            prevAnimation.cancel();
+        }
+        AlphaAnimation alphaAnimation = new AlphaAnimation(1.f, 0.f);
+        alphaAnimation.setFillAfter(true);
+        alphaAnimation.setDuration(1500);
+        alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(final Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(final Animation animation) {
+                progressBar.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(final Animation animation) {
+
+            }
+        });
+        progressBar.setAnimation(alphaAnimation);
+        alphaAnimation.start();
+        prevAnimation = alphaAnimation;
     }
 
     public void closeKeyboard() {

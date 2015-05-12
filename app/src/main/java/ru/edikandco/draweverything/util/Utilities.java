@@ -160,7 +160,7 @@ public class Utilities {
         return "#" + rFString + gFString + bFString;
     }
 
-    public static boolean itRuLocale(Context context) {
+    public static boolean isRuLocale(Context context) {
         Configuration sysConfig = context.getResources().getConfiguration();
         Locale curLocale = sysConfig.locale;
         if (curLocale.getLanguage().equals("ru")||curLocale.getLanguage().equals("uk")) {

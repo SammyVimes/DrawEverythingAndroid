@@ -16,6 +16,7 @@ public class Lesson {
     private int views;
 
     private int id;
+    
     private int steps;
 
     public String getCoverURI() {

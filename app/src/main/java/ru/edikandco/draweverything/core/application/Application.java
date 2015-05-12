@@ -31,8 +31,11 @@ import ru.edikandco.draweverything.core.util.ServiceContainer;
         resToastText = R.string.crash_toast_text)
 public class Application extends android.app.Application {
 
+    private static Context context;
+
     @Override
     public void onCreate() {
+        context = getApplicationContext();
         File mydir = getBaseContext().getDir("mydir", Context.MODE_PRIVATE);
         CacheDirectoryManagerImpl cacheDirectoryManager = new CacheDirectoryManagerImpl(mydir, ApplicationSettings.get(this), ApplicationSettings.PACKAGE_NAME);
         FileSystemPersistence fsp = new FileSystemPersistence(cacheDirectoryManager);
@@ -59,4 +62,9 @@ public class Application extends android.app.Application {
         // The following line triggers the initialization of ACRA
         ACRA.init(this);
     }
+
+    public static Context getContext() {
+        return context;
+    }
+
 }

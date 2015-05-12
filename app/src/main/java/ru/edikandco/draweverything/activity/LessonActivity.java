@@ -1,7 +1,6 @@
 package ru.edikandco.draweverything.activity;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -16,7 +15,6 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -833,14 +831,14 @@ public class LessonActivity extends ActionBarActivity implements ViewSwitcher.Vi
                     // immediately available to the user.
                     MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(),  file.getName()); // регистрация в фотоальбоме
 
-                    if (Utilities.itRuLocale(this)) {
+                    if (Utilities.isRuLocale(this)) {
                         toast = Toast.makeText(getApplicationContext(), "Сохранено в галереи:\nКартаПамяти/Pictures/"+enTitle, Toast.LENGTH_LONG);
                     } else {
                         toast = Toast.makeText(getApplicationContext(), "Saved in gallery:\nSD/Pictures/"+enTitle, Toast.LENGTH_LONG);
                     }
                     toast.show();
                 } catch (IOException e) {
-                    if (Utilities.itRuLocale(this)) {
+                    if (Utilities.isRuLocale(this)) {
                         toast = Toast.makeText(getApplicationContext(),
                                 "Ошибка при сохранении. Проверьте карту памяти.", Toast.LENGTH_LONG);
                     } else {

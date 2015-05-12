@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import ru.edikandco.draweverything.core.application.Application;
 import ru.edikandco.draweverything.core.http.HttpBytesReader;
 import ru.edikandco.draweverything.core.http.HttpRequestException;
 import ru.edikandco.draweverything.core.model.Lesson;
@@ -19,6 +20,7 @@ import ru.edikandco.draweverything.core.model.LessonSuggestion;
 import ru.edikandco.draweverything.core.util.IoUtils;
 import ru.edikandco.draweverything.core.util.ServiceContainer;
 import ru.edikandco.draweverything.core.util.Utils;
+import ru.edikandco.draweverything.util.Utilities;
 
 /**
  * Created by Semyon on 07.04.2015.
@@ -121,7 +123,7 @@ public class API {
             JSONObject jsonLesson = lessonsArray.getJSONObject(i);
             Lesson lesson = new Lesson();
 
-            String title = jsonLesson.getString("title");
+            String title = jsonLesson.getString(Utilities.isRuLocale(Application.getContext()) ? "title" : "titleEn");
             int id = jsonLesson.getInt("id");
             String coverURI = BASE_LESSONS_COVER_URI + id;
             int complexity = jsonLesson.getInt("complexity");

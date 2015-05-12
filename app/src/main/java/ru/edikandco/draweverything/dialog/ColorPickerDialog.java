@@ -58,7 +58,7 @@ public class ColorPickerDialog extends Dialog {
         setContentView(cpv);
         cpv.setUsedColor(mInitialColor, mInitialAlpha);
         //setTitle(R.string.settings_bg_color_dialog);
-        if(Utilities.itRuLocale(getContext())) {
+        if(Utilities.isRuLocale(getContext())) {
             setTitle("Смена Цвета");
         }else{
             setTitle("Change Color");
