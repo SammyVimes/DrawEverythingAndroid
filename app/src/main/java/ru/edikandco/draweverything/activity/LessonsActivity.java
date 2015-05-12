@@ -31,6 +31,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -212,7 +213,13 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
 
                     @Override
                     public void onError(final DownloadManager.Download download, final String errorMsg) {
-
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getApplicationContext(), getString(R.string.error) + errorMsg, Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        downloadManager.kill();
                     }
                 });
                 int i = 0;

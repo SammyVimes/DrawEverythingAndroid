@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Рисовашки</string>
+    <string name="title_activity_lessons">Уроки</string>
+    <string name="crash_toast_text">Ошибка! Сейчас вам будет предложено отправить мне email.</string>
+    <string name="sv_search">Поиск</string>
+    <string name="steps">Шаги</string>
+    <string name="step">Шаг</string>
+    <string name="result">Результат</string>
+    <string name="error">Ошибка при загрузке: </string>
+    <string name="loading">Загрузка…</string>
+</resources>

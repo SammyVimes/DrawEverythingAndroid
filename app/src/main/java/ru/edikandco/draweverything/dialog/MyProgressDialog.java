@@ -8,6 +8,8 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 
+import ru.edikandco.draweverything.R;
+
 /**
  * Created by Semyon on 12.05.2015.
  */
@@ -48,7 +50,7 @@ public class MyProgressDialog extends DialogFragment {
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
         progressDialog = new ProgressDialog(context);
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        progressDialog.setMessage("Загрузка...");
+        progressDialog.setMessage(getString(R.string.loading));
         progressDialog.setMax(max);
         progressDialog.setProgress(0);
         return progressDialog;
