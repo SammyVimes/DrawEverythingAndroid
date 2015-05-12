@@ -78,14 +78,16 @@ public class DownloadManager {
 
     public void kill() {
         cancelAllDownloads();
-        thread.stopWorking();
-        try {
-            thread.interrupt();
-            thread.stop();
-        } catch (Exception e) {
+        if (thread != null) {
+            thread.stopWorking();
+            try {
+                thread.interrupt();
+                thread.stop();
+            } catch (Exception e) {
 
+            }
+            thread = null;
         }
-        thread = null;
     }
 
     public void cancelAllDownloads() {
@@ -249,12 +251,14 @@ public class DownloadManager {
                     error("Can't download, response code is "
                             + connection.getResponseCode()
                             + " message is " + connection.getResponseMessage());
+                    return;
                 }
 
                 // Check for valid content length.
                 int contentLength = connection.getContentLength();
                 if (contentLength < 1) {
                     error("Not valid content length");
+                    return;
                 }
                 /* Set the size for this download if it
                 hasn't been already set. */

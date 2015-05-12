@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DrawEverything</string>
+    <string name="app_name">Draw Everywhere</string>
     <string name="title_activity_lessons">Lessons</string>
     <string name="crash_toast_text">Error! You will be prompted to send me an email.</string>
     <string name="sv_search">Search</string>

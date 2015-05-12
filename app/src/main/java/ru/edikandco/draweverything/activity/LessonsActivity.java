@@ -216,6 +216,7 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                myProgressDialog.dismiss();
                                 Toast.makeText(getApplicationContext(), getString(R.string.error) + errorMsg, Toast.LENGTH_LONG).show();
                             }
                         });
