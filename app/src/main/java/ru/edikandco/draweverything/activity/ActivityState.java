@@ -25,6 +25,7 @@ public class ActivityState {
 
     public Paint mPaint, oldPaint;
     public int currentLessonStep;
+    public boolean zooming;
 
     // public AvtivityState(int step, int size, int mode, DrawingView dv, Paint paint){
     public ActivityState(){

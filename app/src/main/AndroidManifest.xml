@@ -34,6 +34,7 @@
         </activity>
         <activity
             android:name=".activity.LessonActivity"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
             android:label="@string/title_activity_lessons" >
             <!--<intent-filter>-->
                 <!--<action android:name="android.intent.action.MAIN" />-->

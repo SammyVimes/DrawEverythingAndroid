@@ -76,6 +76,18 @@ public class DownloadManager {
         }
     }
 
+    public void kill() {
+        cancelAllDownloads();
+        thread.stopWorking();
+        try {
+            thread.interrupt();
+            thread.stop();
+        } catch (Exception e) {
+
+        }
+        thread = null;
+    }
+
     public void cancelAllDownloads() {
         lock.lock();
         try {

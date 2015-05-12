@@ -1,6 +1,5 @@
 package ru.edikandco.draweverything.activity;
 
-import android.app.DownloadManager;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,6 +11,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.BaseColumns;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v7.app.ActionBarActivity;
@@ -42,10 +42,12 @@ import ru.edikandco.draweverything.core.adapter.BaseAdapter;
 import ru.edikandco.draweverything.core.model.Lesson;
 import ru.edikandco.draweverything.core.model.LessonSuggestion;
 import ru.edikandco.draweverything.core.service.API;
+import ru.edikandco.draweverything.core.service.DownloadManager;
 import ru.edikandco.draweverything.core.util.Constants;
 import ru.edikandco.draweverything.core.util.Promise;
 import ru.edikandco.draweverything.core.util.ServiceContainer;
 import ru.edikandco.draweverything.core.util.Utils;
+import ru.edikandco.draweverything.dialog.MyProgressDialog;
 
 public class LessonsActivity extends BaseToolbarActivity implements AdapterView.OnItemClickListener {
 
@@ -139,6 +141,8 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
         return super.onOptionsItemSelected(item);
     }
 
+    private DownloadManager downloadManager = null;
+
     @Override
     public void onItemClick(final AdapterView<?> adapterView, final View view, final int i, final long l) {
         final API api = ServiceContainer.getService(API.class);
@@ -151,49 +155,71 @@ public class LessonsActivity extends BaseToolbarActivity implements AdapterView.
         }, true).then(new Promise.Action<List<String>, Void>() {
             @Override
             public Void action(final List<String> data, final boolean success) {
-                int i = 0;
                 File file = new File(Constants.SDPATH + "/" + lesson.getId() + "/");
                 file.mkdirs();
-
-                DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-
-                for (String path : data) {
-                    DownloadManager.Request request = new DownloadManager.Request(
-                            Uri.parse(path));
-                    File f = new File(Constants.SDPATH + "/" + lesson.getId() + "/" + i + ".png");
-                    request.setDestinationUri(Uri.fromFile(f));
-                    downloadManager.enqueue(request);
-                    i++;
+                if (downloadManager != null) {
+                    downloadManager.kill();
                 }
+                downloadManager = new DownloadManager();
+                final MyProgressDialog myProgressDialog = MyProgressDialog.createDialog(LessonsActivity.this, data.size());
 
-                final BroadcastReceiver receiver = new BroadcastReceiver() {
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                myProgressDialog.show(fragmentManager, "progress");
+
+                downloadManager.setListener(new DownloadManager.DownloadProgressListener() {
 
                     private int size = data.size();
                     private int cur = 0;
 
                     @Override
-                    public void onReceive(Context context, Intent intent) {
-                        String action = intent.getAction();
-                        final BroadcastReceiver _this = this;
-                        if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    cur++;
-                                    if (cur >= size) {
-                                        Intent intent = new Intent(LessonsActivity.this, LessonActivity.class);
-                                        intent.putExtra("lesson_id", lesson.getId());
-                                        unregisterReceiver(_this);
-                                        startActivity(intent);
-                                    }
-                                }
-                            });
-                        }
-                    }
-                };
+                    public void onProgress(final DownloadManager.Download download, final int progress) {
 
-                registerReceiver(receiver, new IntentFilter(
-                        DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                    }
+
+                    @Override
+                    public void onPause(final DownloadManager.Download download) {
+
+                    }
+
+                    @Override
+                    public void onResume(final DownloadManager.Download download) {
+
+                    }
+
+                    @Override
+                    public void onComplete(final DownloadManager.Download download) {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                cur++;
+                                myProgressDialog.setProgress(cur);
+                                if (cur >= size) {
+                                    myProgressDialog.dismiss();
+                                    Intent intent = new Intent(LessonsActivity.this, LessonActivity.class);
+                                    intent.putExtra("lesson_id", lesson.getId());
+                                    intent.putExtra("title_lesson", lesson.getTitle());
+                                    startActivity(intent);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onCancel(final DownloadManager.Download download) {
+
+                    }
+
+                    @Override
+                    public void onError(final DownloadManager.Download download, final String errorMsg) {
+
+                    }
+                });
+                int i = 0;
+                for (String path : data) {
+                    downloadManager.startDownload(path, Constants.SDPATH + "/" + lesson.getId() + "/" + i + ".png");
+                    i++;
+                }
 
                 return null;
             }

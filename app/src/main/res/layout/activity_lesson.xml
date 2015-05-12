@@ -4,26 +4,28 @@
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/white">
 
-    <ImageSwitcher
+    <ViewSwitcher
         android:id="@+id/stepImage"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:gravity="center"
         android:paddingTop="0dp">
-    </ImageSwitcher>
+    </ViewSwitcher>
 
     <RelativeLayout
         android:id="@+id/drawinginterface"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        >
 
-        
         <RelativeLayout
             android:id="@+id/drawinglayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent" >
+
         </RelativeLayout>
 
 
@@ -33,53 +35,52 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_alignParentEnd="false"
             android:gravity="bottom"
             android:id="@+id/bottom_v_panel">
 
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:id="@+id/bottom_panel1">
-            <ImageButton
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/prewStepButton"
-                android:layout_weight="1"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
-                android:onClick="butClick"
-                android:src="@drawable/ic_left"
-                android:background="@null"
-                android:layout_marginBottom="4dp" />
+                android:orientation="horizontal"
+                android:id="@+id/bottom_panel1">
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/prewStepButton"
+                    android:layout_weight="1"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:onClick="butClick"
+                    android:src="@drawable/ic_left"
+                    android:background="@null"
+                    android:layout_marginBottom="4dp" />
 
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/interfaceVisibleButton"
-                android:layout_alignParentBottom="true"
-                android:layout_weight="1"
-                android:onClick="butClick"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
-                android:src="@drawable/ic_hide_draw"
-                android:background="@null"
-                android:layout_marginBottom="4dp" />
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/interfaceVisibleButton"
+                    android:layout_alignParentBottom="true"
+                    android:layout_weight="1"
+                    android:onClick="butClick"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:src="@drawable/ic_hide_draw"
+                    android:background="@null"
+                    android:layout_marginBottom="4dp" />
 
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/nextStepButton"
-                android:layout_alignParentBottom="true"
-                android:layout_weight="1"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
-                android:onClick="butClick"
-                android:src="@drawable/ic_right"
-                android:background="@null"
-                android:layout_marginBottom="4dp" />
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/nextStepButton"
+                    android:layout_alignParentBottom="true"
+                    android:layout_weight="1"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:onClick="butClick"
+                    android:src="@drawable/ic_right"
+                    android:background="@null"
+                    android:layout_marginBottom="4dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -109,41 +110,6 @@
                     android:onClick="butClick"
                     android:src="@drawable/ic_brush" />
 
-                <RelativeLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <FrameLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <FrameLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="#ffff006b"
-                            android:layout_margin="5dp"
-                            android:id="@+id/selectedColor">
-
-                        </FrameLayout>
-
-                        <ImageView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:id="@+id/imageView" />
-
-                        <ImageButton
-                        android:id="@+id/colorButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="2"
-                        android:background="@null"
-                        android:contentDescription="Color"
-                        android:onClick="butClick"
-                        android:src="@drawable/ic_palette" />
-
-                    </FrameLayout>
-
-                </RelativeLayout>
 
                 <RelativeLayout
                     android:layout_width="wrap_content"
@@ -167,6 +133,53 @@
                         android:src="@drawable/ic_line"
                         android:paddingTop="25dp" />
                 </RelativeLayout>
+
+
+                <RelativeLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="#ffff006b"
+                            android:layout_margin="5dp"
+                            android:id="@+id/selectedColor">
+
+                        </FrameLayout>
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:id="@+id/imageView" />
+
+                        <ImageButton
+                            android:id="@+id/colorButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:background="@null"
+                            android:contentDescription="Color"
+                            android:onClick="butClick"
+                            android:src="@drawable/ic_palette" />
+
+                    </FrameLayout>
+
+                </RelativeLayout>
+
+                <ImageButton
+                    android:id="@+id/fillButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:contentDescription="Fill"
+                    android:onClick="butClick"
+                    android:src="@drawable/ic_fill" />
 
                 <ImageButton
                     android:id="@+id/eraseButton"
@@ -257,6 +270,15 @@
                 android:background="@null"
                 android:onClick="butClick"
                 android:src="@drawable/ic_trash" />
+
+            <ImageButton
+                android:id="@+id/zoomButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:background="@null"
+                android:onClick="butClick"
+                android:src="@drawable/ic_loop" />
         </LinearLayout>
 
 
@@ -285,7 +307,7 @@
                 android:layout_height="wrap_content"
                 android:background="@null"
                 android:onClick="butClick"
-                android:src="@drawable/sample0" 
+                android:src="@drawable/sample0"
                 android:padding="5dp"/>
 
             <ImageButton
@@ -295,16 +317,16 @@
                 android:layout_height="wrap_content"
                 android:background="@null"
                 android:onClick="butClick"
-                android:src="@drawable/sample1" 
+                android:src="@drawable/sample1"
                 android:padding="5dp"/>
 
-                      <ImageButton
+            <ImageButton
                 android:id="@+id/sample2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@null"
                 android:onClick="butClick"
-                android:src="@drawable/sample2" 
+                android:src="@drawable/sample2"
                 android:padding="5dp"/>
         </TableRow>
 
@@ -319,8 +341,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@null"
-                android:onClick="butClick" 
-                  android:src="@drawable/sample3"
+                android:onClick="butClick"
+                android:src="@drawable/sample3"
                 android:padding="5dp"/>
 
             <ImageButton
@@ -329,7 +351,7 @@
                 android:layout_height="wrap_content"
                 android:background="@null"
                 android:onClick="butClick"
-                android:src="@drawable/sample4" 
+                android:src="@drawable/sample4"
                 android:padding="5dp"/>
 
             <ImageButton
@@ -418,22 +440,22 @@
 
         </LinearLayout>
     </LinearLayout>
-    
-                            <ImageView
-                                android:id="@+id/progress"
-                                android:layout_width="fill_parent"
-                                android:layout_height="fill_parent"
-                                android:scaleType="centerCrop"
-                                android:src="@drawable/gray"
-                                android:visibility="gone" />
 
-        <ProgressBar
-            android:id="@+id/progressbar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-               android:visibility="gone" />
+    <ImageView
+        android:id="@+id/progress"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/gray"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone" />
 
 
 </RelativeLayout>

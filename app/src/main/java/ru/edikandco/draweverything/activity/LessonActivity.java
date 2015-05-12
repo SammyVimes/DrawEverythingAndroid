@@ -13,6 +13,7 @@ import android.graphics.MaskFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.net.Uri;
@@ -20,6 +21,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.v7.app.ActionBarActivity;
 import android.text.format.Time;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
@@ -42,6 +44,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
+import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -51,13 +56,15 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Queue;
 
 import ru.edikandco.draweverything.R;
 import ru.edikandco.draweverything.core.util.Constants;
 import ru.edikandco.draweverything.dialog.ColorPickerDialog;
 import ru.edikandco.draweverything.util.Utilities;
 
-public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory, SeekBar.OnSeekBarChangeListener, ColorPickerDialog.OnColorChangedListener {
+
+public class LessonActivity extends ActionBarActivity implements ViewSwitcher.ViewFactory, SeekBar.OnSeekBarChangeListener, ColorPickerDialog.OnColorChangeListener {
 
     private int currentStep, totalSteps;
     private ActivityState state;
@@ -81,6 +88,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
     private int countLayers = 3, step;
     private boolean UnlockDialog = false;
     private int redraw_process = 0;
+    private Bitmap floorBitmap ;
     private Handler historyHandler;
     public Canvas drawingCanvas;
     public Canvas[] cashCanvas = new Canvas [countLayers];
@@ -91,11 +99,11 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
     public LinkedList <PaintAction> actions = new LinkedList<PaintAction>();
 
     private Path mPath, oldPath;
-    private boolean visibleInterface;
+    private boolean visibleInterface, zooming;
     DisplayMetrics metrics;
     DrawingView drawingView;
 
-    private ImageSwitcher imagePrew;
+    private ViewSwitcher imagePrew;
     private int id_lesson;
     private String lessonTitle;
     private String[] imagePaths;
@@ -104,7 +112,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
     private Animation out;
 
     private LinearLayout right_panel1, bottom_panel2;
-    private ImageButton saveButton, interfaceButton;
+    private ImageButton saveButton, interfaceButton, zoomButton;
     private FrameLayout selectedColorLayout;
     private int currentLessonStep;
     private int totalLessonSteps;
@@ -302,6 +310,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
         right_panel1 = (LinearLayout) findViewById(R.id.right_panel1);
         saveButton = (ImageButton) findViewById(R.id.saveButton);
         interfaceButton = (ImageButton) findViewById(R.id.interfaceVisibleButton);
+        zoomButton = (ImageButton) findViewById(R.id.zoomButton);
         bottom_panel2 = (LinearLayout) findViewById(R.id.bottom_panel2);
         selectedColorLayout = (FrameLayout) findViewById(R.id.selectedColor);
         selectedColorLayout.setBackgroundColor(mPaint.getColor());
@@ -312,7 +321,6 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
         id_lesson = getIntent().getIntExtra("lesson_id", 0);
 
-        totalLessonSteps = getIntent().getIntExtra("steps_lesson", 0);
         lessonTitle = getIntent().getStringExtra("title_lesson");
 
         imagePaths = new String[totalLessonSteps + 1];
@@ -372,7 +380,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
         in = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
         out = AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
-        imagePrew = (ImageSwitcher) findViewById(R.id.stepImage);
+        imagePrew = (ViewSwitcher) findViewById(R.id.stepImage);
         imagePrew.setFactory(this);
         imagePrew.setInAnimation(in);
         imagePrew.setOutAnimation(out);
@@ -395,6 +403,22 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
     private static final int DISTANCE = 100;
     private static final int VELOCITY = 200;
+
+    @Override
+    public void onDismiss(int color, int alpha) {
+        drawingView.stopAction();
+        mPaint.setColor(color);
+        mPaint.setAlpha(alpha);
+        selectedColorLayout.setBackgroundColor(mPaint.getColor());
+    }
+
+    @Override
+    public void onColorChanged(int color, int alpha) {
+        drawingView.stopAction();
+        mPaint.setColor(color);
+        mPaint.setAlpha(alpha);
+        selectedColorLayout.setBackgroundColor(mPaint.getColor());
+    }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
@@ -419,11 +443,38 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
         }
     }
 
+    private int lastImg = -1;
 
+    private SubsamplingScaleImageView[] ssivs = new SubsamplingScaleImageView[2];
 
     public void updateStep() {
-        System.gc();
-        imagePrew.setImageURI(Uri.parse(imagePaths[currentLessonStep]));
+        if(ssivs[0]==null){
+            ssivs[0] = new SubsamplingScaleImageView(this);
+            ssivs[0].setImage(ImageSource.uri(imagePaths[currentLessonStep]));
+            ssivs[0].setMaxScale(3);
+            ssivs[0].setMinScale(0.2f);
+
+            ssivs[1] = new SubsamplingScaleImageView(this);
+            ssivs[1].setImage(ImageSource.uri(imagePaths[currentLessonStep]));
+            ssivs[1].setMaxScale(3);
+            ssivs[1].setMinScale(0.2f);
+            lastImg = currentLessonStep;
+            imagePrew.removeAllViews();
+            imagePrew.addView(ssivs[0]);
+            imagePrew.addView(ssivs[1]);
+        }
+
+
+        if(lastImg != currentLessonStep) {
+            SubsamplingScaleImageView nxtView = (SubsamplingScaleImageView) imagePrew.getNextView();
+            nxtView.setImage(ImageSource.uri(imagePaths[currentLessonStep]));
+            nxtView.setScaleAndCenter(((SubsamplingScaleImageView)imagePrew.getCurrentView()).getScale(), ((SubsamplingScaleImageView)imagePrew.getCurrentView()).getCenter());
+            lastImg = currentLessonStep;
+            imagePrew.showNext();
+        }
+
+
+        SubsamplingScaleImageView c = new SubsamplingScaleImageView(this);
 
         if (currentLessonStep < totalLessonSteps) {
             this.setTitle(lessonTitle + " "
@@ -440,12 +491,22 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
             right_panel1.setVisibility(View.VISIBLE);
             saveButton.setVisibility(View.VISIBLE);
             bottom_panel2.setVisibility(View.VISIBLE);
+            drawingView.setVisibility(View.VISIBLE);
             interfaceButton.setImageResource(R.drawable.ic_hide_draw);
         }else{
             right_panel1.setVisibility(View.GONE);
             saveButton.setVisibility(View.GONE);
             bottom_panel2.setVisibility(View.GONE);
+            drawingView.setVisibility(View.GONE);
             interfaceButton.setImageResource(R.drawable.ic_show_draw);
+        }
+
+        if(zooming){
+            drawingView.setVisibility(View.GONE);
+            zoomButton.setImageResource(R.drawable.ic_unloop);
+        }else{
+            //drawingView.setVisibility(View.VISIBLE);
+            zoomButton.setImageResource(R.drawable.ic_loop);
         }
     }
 
@@ -480,7 +541,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
         return false;
     }
 
-    @Override   public void finish(){        System.gc();        super.finish();    }	
+    @Override   public void finish(){        System.gc();        super.finish();    }
 
     @Override   public void onDestroy() { System.gc();  super.onDestroy();  }
 
@@ -496,7 +557,8 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
     public int currentStep_cash;
     public void undo(){
-        if (currentStep>0){
+        //System.out.println("!!!!! Input in undo " + currentStep);
+        if (currentStep>0 ){
             currentStep_cash = currentStep;
             redraw_process= 1;
             progressScreen.setVisibility(View.VISIBLE);
@@ -515,6 +577,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
                             step = 0;
                             for (PaintAction action : actions) {
+                                //System.out.println("!!!!! Undo " + step);
                                 step++;
                                 if(step>currentStep){
                                     break;
@@ -524,7 +587,19 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
                                 }else{
                                     switch(action.getAction()){
                                         case 0:
-                                            cashCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
+                                            cashCanvas[action.getLayer()].drawColor(0x00FFFFFF, PorterDuff.Mode.CLEAR);
+                                            break;
+                                        case 1:
+                                            drawingView.FloodFill(avtivityData.cashBitmaps[action.getLayer()], action.getPoint(),action.getColor());
+                                            //System.out.println("!!!!! Load " + action.getPoint() + " "+  action.getPoint().x + ": "   +   action.getPoint().y);
+
+
+                                            //  avtivityData.cashBitmaps[action.getLayer()] = floorBitmap;
+                                            //  cashCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
+                                            // cashCanvas[action.getLayer()].drawBitmap(avtivityData.cashBitmaps[action.getLayer()], 0, 0, null);
+                                            avtivityData.cashBitmaps[action.getLayer()] = floorBitmap;
+                                            cashCanvas[action.getLayer()].setBitmap(avtivityData.cashBitmaps[action.getLayer()]);
+
                                             break;
                                     }
                                 }
@@ -535,13 +610,12 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
                         historyHandler.sendEmptyMessage(1);
                     }catch(Exception e){
-
+                        e.printStackTrace();
                     }
                 }
 
             });
             avtivityData.process.start();
-
         }
     }
 
@@ -577,8 +651,11 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
                                             cashCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
                                             break;
                                         case 1:
-                                            undo();break;
-                                        case 2: redo(); break;
+                                            drawingView.FloodFill(avtivityData.cashBitmaps[action.getLayer()], action.getPoint(),action.getColor());
+
+                                            avtivityData.cashBitmaps[action.getLayer()] = floorBitmap;
+                                            cashCanvas[action.getLayer()].setBitmap(avtivityData.cashBitmaps[action.getLayer()]);
+                                            break;
 
                                     }
                                 }
@@ -587,7 +664,8 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
                         historyHandler.sendEmptyMessage(1);
                     }catch(Exception e){
-
+                        e.printStackTrace();
+                        historyHandler.sendEmptyMessage(404);
                     }
                 }
             });
@@ -613,31 +691,43 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
             case R.id.interfaceVisibleButton:
                 visibleInterface = !visibleInterface;
                 updateInterfaceVisible();
+                break;
 
+            case R.id.zoomButton:
+                zooming = !zooming;
+                updateInterfaceVisible();
                 break;
 
             case R.id.nextStepButton:
+                currentLessonStep++;
                 if (currentLessonStep < totalLessonSteps) {
-                    currentLessonStep++;
                     updateStep();
                 }
                 break;
 
             case R.id.redoButton:
-                redo();
-                break;
+                if(redraw_process == 0){
+                    redo();
+                }               break;
             case R.id.undoButton:
-                undo();
-
+                if(redraw_process == 0) {
+                    //System.out.println("!!!!! St " + redraw_process);
+                    undo();
+                    //System.out.println("!!!!! Undo comp");
+                }
                 break;
 
             case R.id.colorButton:
 
                 mPaint.setXfermode(null);
-                mPaint.setAlpha(0xFF);
-                new ColorPickerDialog(this, this, "", mPaint.getColor(), mPaint.getColor()).show();
+                //new ColorPickerDialog(this, this, "", mPaint.getColor(), mPaint.getColor()).show();
+                //mPaint.setColor(Color.GREEN);
+                //mPaint.setColor(0xFF34c924);
+                new ColorPickerDialog(this, this,  mPaint.getColor(), mPaint.getAlpha()).show();
                 break;
-
+            case R.id.fillButton:
+                updatePaintMod(7);
+                break;
             case R.id.eraseButton:
                 if(paintSize==1){
                     seekbar_paint_size.setProgress(12);
@@ -680,35 +770,10 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
             case R.id.cleareLayer:
                 drawingView.stopAction();
 
-                actions.add(new PaintAction(paint_layer-1, 0));
                 cashCanvas[paint_layer-1].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
-
-                if(currentStep < totalSteps ){
-                    for(int i = 0; i < (totalSteps - currentStep); i++){
-                        actions.removeLast();
-                    }
-                    totalSteps=currentStep;
-                }
-                currentStep++;
-                totalSteps ++;
-
-                if (totalSteps > 100){
-                    PaintAction action = actions.getFirst();
-                    if (!action.custom){
-                        historyCanvas[action.getLayer()].drawPath(action.getPath(), action.getPaint());
-                    }else{
-                        switch(action.getAction()){
-                            case 0:
-                                historyCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
-                                break;
-                        }
-                    }
-                    actions.removeFirst();
-                    currentStep--;
-                    totalSteps--;
-                }
-
+                drawingView.addAction(new PaintAction(paint_layer-1, 0));
                 drawingView.invalidate();
+
                 break;
 
             case R.id.sizeButton:
@@ -786,7 +851,6 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
                 }
                 break;
 
-
             case R.id.savesizeButton:
                 paintSize = seekbar_paint_size.getProgress();
                 mPaint.setStrokeWidth(paintSize);
@@ -848,12 +912,16 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
                     seekbar_paint_size.setProgress(12);
                 }
                 break;
+            case 7:
+
+                break;
             default:
                 if(paintSize==1){
                     seekbar_paint_size.setProgress(12);
                 }
                 mPaint.setMaskFilter(maskFilters[paint_mod]);
                 break;
+
         }
 
 
@@ -863,9 +931,9 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
 
     public View makeView() {
-        ImageView imageView = new ImageView(this);
-        imageView.setBackgroundColor(getResources().getColor(R.color.white));
-        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        SubsamplingScaleImageView imageView = new SubsamplingScaleImageView(this);
+        //imageView.setBackgroundColor(getResources().getColor(R.color.white));
+        //imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         imageView.setLayoutParams(new ImageSwitcher.LayoutParams(
                 LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
         return imageView;
@@ -894,14 +962,15 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
     }
 
 
+
+
     @Override
-    public Object onRetainNonConfigurationInstance() {
+    public Object onRetainCustomNonConfigurationInstance() {
         avtivityData.currentLessonStep = currentLessonStep;
         avtivityData.totalSteps = totalSteps;
         avtivityData.totalSteps = totalSteps;
         avtivityData.redraw = redraw_process;
         if(redraw_process!=0){
-
             avtivityData.currentStep = currentStep_cash;
         }else{
             avtivityData.currentStep  = currentStep;
@@ -916,6 +985,8 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
         avtivityData.oldPaint =oldPaint;
         avtivityData.oldPath = oldPath;
         avtivityData.visibleInterface = visibleInterface;
+        avtivityData.zooming = zooming;
+
         return avtivityData;
     }
     public class PaintAction {
@@ -923,6 +994,11 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
         Path path;
         Paint paint;
         boolean custom;
+
+        int color;
+        //Point point;
+        int x;
+        int y;
 
         PaintAction(int _layer,Path _path,Paint _paint){
             layer=_layer;
@@ -937,6 +1013,14 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
             custom = true;
         }
 
+        public void setPoint(int _x,int _y){
+            x = _x;
+            y = _y;
+        }
+        public Point getPoint(){return new Point(x,y);}
+        public int getColor(){
+            return color;
+        }
         public int getLayer(){
             return layer;
         }
@@ -982,6 +1066,7 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
 
         public void onDraw(Canvas canvas) {
             if (redraw_process==0){
+
                 if(!mPath.isEmpty() &&  visibleLayers[paint_layer-1]){
                     if(currentStep < totalSteps ){
                         for(int i = 0; i < (totalSteps - currentStep); i++){
@@ -1006,13 +1091,47 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
                 for(int i = 0; i<countLayers;i++){
                     if(visibleLayers[i]){
                         canvas.drawBitmap(avtivityData.cashBitmaps[i], 0, 0, null);
-
                     }
                 }
+
             }
 
         }
 
+        private void addAction(PaintAction pa){
+            actions.add(pa);
+
+            if(currentStep < totalSteps ){
+                for(int i = 0; i < (totalSteps - currentStep); i++){
+                    actions.removeLast();
+                }
+                totalSteps=currentStep;
+            }
+            currentStep++;
+            totalSteps++;
+
+            if (totalSteps > 100){
+                PaintAction action = actions.getFirst();
+                if (!action.custom){
+                    historyCanvas[action.getLayer()].drawPath(action.getPath(), action.getPaint());
+                }else{
+                    switch(action.getAction()){
+                        case 0:
+                            historyCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
+                            break;
+                        case 1:
+                            drawingView.FloodFill(avtivityData.historyBitmaps[action.getLayer()], action.getPoint(), action.getColor());
+                            historyCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
+                            historyCanvas[action.getLayer()].drawBitmap(avtivityData.historyBitmaps[action.getLayer()], 0, 0, null);
+                            break;
+                    }
+                }
+                actions.removeFirst();
+                currentStep--;
+                totalSteps--;
+            }
+
+        }
 
 
         private void stopAction(){
@@ -1032,6 +1151,9 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
                             case 0:
                                 historyCanvas[action.getLayer()].drawColor(0x00FFFFFF,PorterDuff.Mode.CLEAR);
                                 break;
+                            case 1:
+                                drawingView.FloodFill(avtivityData.historyBitmaps[action.getLayer()], action.getPoint(),action.getColor());
+                                break;
                         }
                     }
                     actions.removeFirst();
@@ -1044,62 +1166,156 @@ public class LessonActivity extends Activity implements ViewSwitcher.ViewFactory
         private float mX, mY;
         private static final float TOUCH_TOLERANCE = 4;
 
-        private void touch_start(float x, float y) {
-            mPath.reset();
-            mPath.moveTo(x, y);
-            mX = x;
-            mY = y;
-        }
+        // private int saveOperations = (metrics.widthPixels * metrics.heightPixels) / 2;
+        public void FloodFill(Bitmap bmp_, Point pt,  int replacementColor) {
 
-        private void touch_move(float x, float y) {
-            float dx = Math.abs(x - mX);
-            float dy = Math.abs(y - mY);
-            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
-                mX = x;
-                mY = y;
+            // Bitmap bmp2 = avtivityData.historyBitmaps[paint_layer-1];
+
+            //System.out.println("!!!!! FloodFill 1");
+            //int cutOperations = saveOperations;
+            System.gc();
+            //System.out.println("!!!!! FloodFill 2");
+            floorBitmap = null;
+            //System.out.println("!!!!! FloodFill 3");
+            Bitmap bmp = Bitmap.createBitmap(bmp_);
+            //System.out.println("!!!!! FloodFill 4");
+            //  for(int i = 0; i < 3; i++){
+            //    //System.out.println("!!!!! " + i + ": "   + bmp.getPixel(i,i));
+            // }
+            //System.out.println("!!!!! " + paint_layer +" " + bmp + " " +bmp2);
+            int targetColor = bmp.getPixel(pt.x, pt.y);
+            if (targetColor != replacementColor) {
+                Queue<Point> q = new LinkedList<Point>();
+                q.add(pt);
+                //System.out.println("!!!!! FloodFill 5");
+                while (q.size() > 0) {
+                    Point n = q.poll();
+                    if ((bmp.getPixel(n.x, n.y) != targetColor))
+                        continue;
+
+                    Point w = n, e = new Point(n.x + 1, n.y);
+                    while ((w.x > 0) && ((bmp.getPixel(w.x, w.y) == targetColor))) {
+                        ////System.out.println("!!!!! FloodFill 6");
+                        bmp.setPixel(w.x, w.y, replacementColor);
+                        ////System.out.println("!!!!! FloodFill 7");
+
+                        if ((w.y > 0) && ((bmp.getPixel(w.x, w.y - 1) == targetColor)))
+                            q.add(new Point(w.x, w.y - 1));
+                        if ((w.y < bmp.getHeight() - 1)
+                                && ((bmp.getPixel(w.x, w.y + 1) == targetColor)))
+                            q.add(new Point(w.x, w.y + 1));
+                        w.x--;
+
+                    }
+                    // //System.out.println("!!!!! FloodFill 8");
+                    while ((e.x < bmp.getWidth() - 1) && ((bmp.getPixel(e.x, e.y) == targetColor))) {
+                        bmp.setPixel(e.x, e.y, replacementColor);
+
+
+                        if ((e.y > 0) && ((bmp.getPixel(e.x, e.y - 1) == targetColor)))
+                            q.add(new Point(e.x, e.y - 1));
+                        if ((e.y < bmp.getHeight() - 1) && ((bmp.getPixel(e.x, e.y + 1) == targetColor)))
+                            q.add(new Point(e.x, e.y + 1));
+                        e.x++;
+                    }
+                }
+                //System.out.println("!!!!! FloodFill 9");
+                floorBitmap = bmp;
+                //System.out.println("!!!!! FloodFill 10");
+
             }
         }
 
-        public void touch_up() {
-            mPath.lineTo(mX, mY);
-            // commit the path to our offscreen
-            drawingCanvas.drawPath(mPath, mPaint);
-            stopAction();
-            // kill this so we don't double draw
 
-            mPath.reset();
+        private void touch_start(final float x, final float y) {
+            if (redraw_process==0) {
+                if (paint_mod == 7) {
+
+                } else {
+                    mPath.reset();
+                    mPath.moveTo(x, y);
+                    mX = x;
+                    mY = y;
+                }
+            }
+        }
+
+        private void touch_move(float x, float y) {
+            if (redraw_process==0) {
+                if (paint_mod == 7) {
+
+                } else {
+                    float dx = Math.abs(x - mX);
+                    float dy = Math.abs(y - mY);
+                    if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+                        mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+                        mX = x;
+                        mY = y;
+                    }
+                }
+            }
+        }
+
+        public void touch_up(final float x, final float y) {
+            if (redraw_process==0) {
+                if (paint_mod == 7) {
+                    progressScreen.setVisibility(View.VISIBLE);
+                    progressLoader.setVisibility(View.VISIBLE);
+
+                    avtivityData.process = new Thread(new Runnable() {
+                        public void run() {
+                            PaintAction pa = new PaintAction(paint_layer - 1, 1);
+                            //pa.point = new Point((int) x, (int) y);
+                            pa.setPoint((int) x, (int) y);
+                            pa.color = mPaint.getColor();
+
+                            //System.out.println("!!!!! Save " + pa.getPoint()+ " "  +  pa.getPoint().x + ": "   +   pa.getPoint().y);
+                            //drawingView.stopAction();
+                            redraw_process = 100;
+                            drawingView.FloodFill(avtivityData.cashBitmaps[paint_layer - 1], pa.getPoint(), pa.color);
+                            drawingView.addAction(pa);
+
+                            historyHandler.sendEmptyMessage(2);
+                        }
+
+                    });
+                    avtivityData.process.start();
+                } else {
+                    mPath.lineTo(mX, mY);
+                    // commit the path to our offscreen
+                    drawingCanvas.drawPath(mPath, mPaint);
+                    stopAction();
+                    // kill this so we don't double draw
+
+                    mPath.reset();
+                }
+            }
         }
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-            float x = event.getX();
-            float y = event.getY();
+            if (redraw_process==0) {
+                float x = event.getX();
+                float y = event.getY();
 
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    touch_start(x, y);
-                    invalidate();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    touch_move(x, y);
-                    invalidate();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    touch_up();
-                    invalidate();
-                    break;
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        touch_start(x, y);
+                        invalidate();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        touch_move(x, y);
+                        invalidate();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        touch_up(x, y);
+                        invalidate();
+                        break;
+                }
             }
             return true;
         }
-    }
 
-    @Override
-    public void colorChanged(String key, int color) {
-        drawingView.stopAction();
-        mPaint.setColor(color);
-        selectedColorLayout.setBackgroundColor(mPaint.getColor());
     }
-
 
 }
